@@ -21,6 +21,9 @@ pub fn users_router() -> Router<AppState> {
 pub struct UsersQuery {
     pub page: Option<i64>,
     pub page_size: Option<i64>,
+    pub email: Option<String>,
+    pub name: Option<String>,
+    pub search: Option<String>,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -78,7 +81,7 @@ fn validate_user_input(name: &str, email: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-/// GET /api/v1/users — list users with pagination.
+/// GET /api/v1/users — list users with pagination and optional name/email/search filtering.
 pub async fn list_users(
     State(state): State<AppState>,
     Query(params): Query<UsersQuery>,
@@ -87,16 +90,55 @@ pub async fn list_users(
     let page_size = params.page_size.unwrap_or(20).clamp(1, 100);
     let offset = (page - 1) * page_size;
 
-    let users = sqlx::query_as::<_, User>(
-        "SELECT id, name, email, created_at, updated_at FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2",
-    )
-    .bind(page_size)
-    .bind(offset)
-    .fetch_all(&state.db)
-    .await
-    .map_err(AppError::Database)?;
+    let mut builder = sqlx::QueryBuilder::new(
+        "SELECT id, name, email, created_at, updated_at FROM users WHERE 1=1",
+    );
+    let mut count_builder = sqlx::QueryBuilder::new("SELECT COUNT(*) FROM users WHERE 1=1");
 
-    let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users")
+    if let Some(ref email) = params.email {
+        let pattern = format!("%{}%", email.trim());
+        builder.push(" AND email ILIKE ");
+        builder.push_bind(pattern.clone());
+        count_builder.push(" AND email ILIKE ");
+        count_builder.push_bind(pattern);
+    }
+
+    if let Some(ref name) = params.name {
+        let pattern = format!("%{}%", name.trim());
+        builder.push(" AND name ILIKE ");
+        builder.push_bind(pattern.clone());
+        count_builder.push(" AND name ILIKE ");
+        count_builder.push_bind(pattern);
+    }
+
+    if let Some(ref search) = params.search {
+        let pattern = format!("%{}%", search.trim());
+        builder.push(" AND (name ILIKE ");
+        builder.push_bind(pattern.clone());
+        builder.push(" OR email ILIKE ");
+        builder.push_bind(pattern.clone());
+        builder.push(")");
+
+        count_builder.push(" AND (name ILIKE ");
+        count_builder.push_bind(pattern.clone());
+        count_builder.push(" OR email ILIKE ");
+        count_builder.push_bind(pattern);
+        count_builder.push(")");
+    }
+
+    builder.push(" ORDER BY created_at DESC LIMIT ");
+    builder.push_bind(page_size);
+    builder.push(" OFFSET ");
+    builder.push_bind(offset);
+
+    let users = builder
+        .build_query_as::<User>()
+        .fetch_all(&state.db)
+        .await
+        .map_err(AppError::Database)?;
+
+    let total: (i64,) = count_builder
+        .build_query_as::<(i64,)>()
         .fetch_one(&state.db)
         .await
         .unwrap_or((0,));

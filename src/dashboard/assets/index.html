@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Ouroboros — Executive Observability & Load Engine</title>
+  <meta name="description" content="Next-gen real-time telemetry, benchmark control engine, and metrics visualization for Project Ouroboros.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-subtle: #0b0f19;
+      --card-bg: rgba(13, 18, 30, 0.7);
+      --card-bg-hover: rgba(18, 26, 44, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-glow: rgba(6, 182, 212, 0.4);
+      --text-main: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.25);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.25);
+      --rose: #f43f5e;
+      --rose-glow: rgba(244, 63, 94, 0.25);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.25);
+      --violet: #8b5cf6;
+      --violet-glow: rgba(139, 92, 246, 0.25);
+
+      --font-display: 'Outfit', -apple-system, sans-serif;
+      --font-sans: 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(6, 182, 212, 0.12) 0px, transparent 45%),
+        radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.1) 0px, transparent 45%),
+        radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      gap: 20px;
+      line-height: 1.5;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 28px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-logo-wrap {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--cyan-glow);
+      overflow: hidden;
+    }
+
+    .brand-logo-wrap::after {
+      content: '';
+      position: absolute;
+      inset: 1px;
+      background: #090d16;
+      border-radius: 11px;
+    }
+
+    .brand-logo-wrap svg {
+      position: relative;
+      z-index: 1;
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: url(#brandGrad);
+      stroke-width: 2;
+    }
+
+    .brand-titles h1 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #ffffff 40%, #a5f3fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .version-tag {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--cyan);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .header-indicators {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pill-badge {
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .pill-ws {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+    }
+
+    .pill-ws.disconnected {
+      background: rgba(244, 63, 94, 0.12);
+      color: var(--rose);
+      border-color: rgba(244, 63, 94, 0.35);
+      box-shadow: 0 0 15px rgba(244, 63, 94, 0.15);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 10px currentColor;
+      animation: pulseAnim 1.8s infinite;
+    }
+
+    @keyframes pulseAnim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    #target {
+      background: rgba(6, 182, 212, 0.1);
+      color: var(--cyan);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);
+    }
+
+    #target.reached {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--emerald);
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Primary Stat Cards Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      position: relative;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 22px 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: transparent;
+      transition: background 0.3s ease;
+    }
+
+    .stat-card:hover {
+      background: var(--card-bg-hover);
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.5);
+    }
+
+    .stat-card.card-cyan:hover::before { background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+    .stat-card.card-emerald:hover::before { background: linear-gradient(90deg, transparent, var(--emerald), transparent); }
+    .stat-card.card-rose:hover::before { background: linear-gradient(90deg, transparent, var(--rose), transparent); }
+    .stat-card.card-amber:hover::before { background: linear-gradient(90deg, transparent, var(--amber), transparent); }
+
+    .stat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stat-label-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-icon-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-icon-badge svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .badge-cyan { background: rgba(6, 182, 212, 0.12); color: var(--cyan); border-color: rgba(6, 182, 212, 0.3); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.12); color: var(--emerald); border-color: rgba(16, 185, 129, 0.3); }
+    .badge-rose { background: rgba(244, 63, 94, 0.12); color: var(--rose); border-color: rgba(244, 63, 94, 0.3); }
+    .badge-amber { background: rgba(245, 158, 11, 0.12); color: var(--amber); border-color: rgba(245, 158, 11, 0.3); }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.01em;
+    }
+
+    .stat-pill {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: #fff;
+    }
+
+    .stat-value.cyan {
+      color: var(--cyan);
+      text-shadow: 0 0 25px rgba(6, 182, 212, 0.35);
+    }
+
+    .stat-value.emerald {
+      color: var(--emerald);
+      text-shadow: 0 0 25px rgba(16, 185, 129, 0.35);
+    }
+
+    .stat-value.rose {
+      color: var(--rose);
+      text-shadow: 0 0 25px rgba(244, 63, 94, 0.35);
+    }
+
+    .stat-value.amber {
+      color: var(--amber);
+      text-shadow: 0 0 25px rgba(245, 158, 11, 0.35);
+    }
+
+    .stat-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      padding-top: 10px;
+    }
+
+    .stat-bottom-highlight {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-secondary);
+    }
+
+    /* Charts Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1024px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .panel-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-title-wrap svg {
+      width: 18px;
+      height: 18px;
+      color: var(--cyan);
+    }
+
+    .panel-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.01em;
+    }
+
+    .panel-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 280px;
+    }
+
+    /* Bottom Control & Tools Grid */
+    .dashboard-lower-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 960px) {
+      .dashboard-lower-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Benchmark Engine Card */
+    .controls-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .controls-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 16px;
+      align-items: end;
+    }
+
+    .input-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-field-group label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .input-field-group label svg {
+      width: 14px;
+      height: 14px;
+      color: var(--text-muted);
+    }
+
+    .custom-select, .custom-input {
+      background: rgba(18, 26, 44, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      outline: none;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    .custom-select:focus, .custom-input:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+    }
+
+    .custom-select option {
+      background: #0d1322;
+      color: #fff;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button {
+      padding: 11px 22px;
+      border-radius: 12px;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #06b6d4, #0284c7);
+      color: #fff;
+      box-shadow: 0 4px 20px var(--cyan-glow);
+      flex: 1;
+    }
+
+    .btn-start:hover {
+      filter: brightness(1.15);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(6, 182, 212, 0.45);
+    }
+
+    .btn-stop {
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--rose);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      padding: 11px 18px;
+    }
+
+    .btn-stop:hover {
+      background: rgba(244, 63, 94, 0.28);
+      border-color: var(--rose);
+      transform: translateY(-2px);
+    }
+
+    .bench-status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .bench-status {
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .presets-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .preset-chip {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      padding: 5px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preset-chip:hover {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--cyan);
+      border-color: rgba(6, 182, 212, 0.35);
+    }
+
+    /* Live Interactive Tester / Diagnostics Card */
+    .diagnostics-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .ping-tester-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: rgba(6, 182, 212, 0.06);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 14px;
+      gap: 12px;
+    }
+
+    .ping-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .ping-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ping-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .btn-test-ping {
+      padding: 9px 16px;
+      border-radius: 10px;
+      background: rgba(6, 182, 212, 0.2);
+      color: var(--cyan);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .btn-test-ping:hover {
+      background: var(--cyan);
+      color: #000;
+      box-shadow: 0 0 16px var(--cyan-glow);
+    }
+
+    .endpoints-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .endpoint-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .endpoint-item:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .endpoint-method {
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+    }
+
+    .method-get { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
+    .method-post { background: rgba(6, 182, 212, 0.15); color: var(--cyan); }
+
+    .endpoint-path {
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      padding: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+
+    .copy-btn:hover {
+      color: var(--cyan);
+    }
+
+    /* Footer */
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 16px;
+    }
+
+    .footer-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover {
+      color: var(--cyan);
+    }
+  </style>
+</head>
+<body>
+  <!-- Hidden SVG Gradients for Icons -->
+  <svg width="0" height="0" style="position: absolute;">
+    <defs>
+      <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#06b6d4" />
+        <stop offset="100%" stop-color="#10b981" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- Navigation Bar -->
+  <header>
+    <div class="brand-section">
+      <div class="brand-logo-wrap">
+        <!-- Ouroboros / Infinity Core Icon -->
+        <svg viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728M5.636 18.364a9 9 0 010-12.728m12.728 0l-12.728 12.728" />
+        </svg>
+      </div>
+      <div class="brand-titles">
+        <div class="brand-badge-row">
+          <h1>Project Ouroboros</h1>
+          <span class="version-tag">v0.1.0-PRO</span>
+        </div>
+        <div class="brand-sub">NEXUS HIGH-THROUGHPUT ENGINE & OBSERVATORY</div>
+      </div>
+    </div>
+    
+    <div class="header-indicators">
+      <div id="ws-status" class="pill-badge pill-ws">
+        <span class="pulse-dot"></span>
+        <span id="ws-status-text">CONNECTING</span>
+      </div>
+      <div id="target" class="pill-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="6"></circle>
+          <circle cx="12" cy="12" r="2"></circle>
+        </svg>
+        <span>⏳ Building...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Metric Telemetry Cards Grid -->
+  <section class="metrics-grid">
+    <!-- Card 1: Ping RPS (Hot Path) -->
+    <div class="stat-card card-cyan">
+      <div class="stat-top">
+        <div class="stat-label-wrap">
+          <div class="stat-icon-badge badge-cyan">
+            <!-- Bolt / Lightning Icon -->
+            <svg viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <span class="stat-label">Ping RPS (Hot Path)</span>
+        </div>
+        <span class="stat-pill">Sub-ms Path</span>
+      </div>
+      <div id="rps" class="stat-value cyan">0</div>
+      <div class="stat-bottom">
+        <span class="stat-bottom-highlight">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          Direct Atomics
+        </span>
+        <span>Target: 1,000,000</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Total System RPS -->
+    <div class="stat-card card-emerald">
+      <div class="stat-top">
+        <div class="stat-label-wrap">
+          <div class="stat-icon-badge badge-emerald">
+            <!-- Activity / Waveform Icon -->
+            <svg viewBox="0 0 24 24" stroke="currentColor">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"></polyline>
+            </svg>
+          </div>
+          <span class="stat-label">Total System RPS</span>
+        </div>
+        <span class="stat-pill">All Endpoints</span>
+      </div>
+      <div id="total-rps" class="stat-value emerald">0</div>
+      <div class="stat-bottom">
+        <span class="stat-bottom-highlight">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+          1s Tick Aggregate
+        </span>
+        <span>Axum Engine</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Error Rate % -->
+    <div class="stat-card card-rose">
+      <div class="stat-top">
+        <div class="stat-label-wrap">
+          <div class="stat-icon-badge badge-rose">
+            <!-- Shield Alert Icon -->
+            <svg viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <line x1="12" y1="8" x2="12" y2="12" stroke-linecap="round"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16" stroke-linecap="round"></line>
+            </svg>
+          </div>
+          <span class="stat-label">Error Rate</span>
+        </div>
+        <span class="stat-pill">HTTP 5xx / Drop</span>
+      </div>
+      <div id="error-rate" class="stat-value rose">0.00%</div>
+      <div class="stat-bottom">
+        <span class="stat-bottom-highlight">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          Zero Loss Guard
+        </span>
+        <span>Goal: &lt; 0.1%</span>
+      </div>
+    </div>
+
+    <!-- Card 4: Active Connections -->
+    <div class="stat-card card-amber">
+      <div class="stat-top">
+        <div class="stat-label-wrap">
+          <div class="stat-icon-badge badge-amber">
+            <!-- Network Plug / Connections Icon -->
+            <svg viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6" />
+            </svg>
+          </div>
+          <span class="stat-label">Active Conns</span>
+        </div>
+        <span class="stat-pill">TCP Sockets</span>
+      </div>
+      <div id="active-conns" class="stat-value amber">0</div>
+      <div class="stat-bottom">
+        <span class="stat-bottom-highlight">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+          </svg>
+          Live Tokio Sockets
+        </span>
+        <span>Async Non-blocking</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Telemetry Charts Section -->
+  <section class="charts-grid">
+    <!-- Chart 1: Real-Time Throughput -->
+    <div class="chart-panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+          <div class="panel-title">Throughput Dynamics (RPS)</div>
+        </div>
+        <div class="panel-meta">60-SECOND ROLLING WINDOW • 1-SEC TELEMETRY TICK</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="rpsChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 2: System Error Rate -->
+    <div class="chart-panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--rose);">
+            <path d="M18 6L6 18M6 6l12 12"></path>
+          </svg>
+          <div class="panel-title">Error Velocity (%)</div>
+        </div>
+        <div class="panel-meta">FAULT TOLERANCE TRACKER</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="errorChart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lower Section: Load Generator & Live Diagnostics -->
+  <section class="dashboard-lower-grid">
+    <!-- Benchmark Control Unit -->
+    <div class="controls-panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <!-- Rocket / Turbo Turbine Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--cyan);">
+            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+            <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+            <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
+            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
+          </svg>
+          <div class="panel-title">Built-in Benchmark Engine</div>
+        </div>
+        <div class="presets-wrap">
+          <span class="preset-chip" onclick="applyPreset('direct', 100, 15)">⚡ Quick Direct (100)</span>
+          <span class="preset-chip" onclick="applyPreset('direct', 1000, 30)">🔥 Extreme Direct (1k)</span>
+          <span class="preset-chip" onclick="applyPreset('loopback', 50, 10)">🌐 HTTP Loopback (50)</span>
+        </div>
+      </div>
+
+      <div class="controls-form">
+        <div class="input-field-group">
+          <label for="bench-mode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            Execution Mode
+          </label>
+          <select id="bench-mode" class="custom-select">
+            <option value="direct">Direct (Memory-level hot path)</option>
+            <option value="loopback">Loopback (TCP HTTP network stack)</option>
+          </select>
+        </div>
+
+        <div class="input-field-group">
+          <label for="bench-concurrency">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Concurrency Workers
+          </label>
+          <input id="bench-concurrency" class="custom-input" type="number" value="100" min="1" max="2000">
+        </div>
+
+        <div class="input-field-group">
+          <label for="bench-duration">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Duration (Seconds)
+          </label>
+          <input id="bench-duration" class="custom-input" type="number" value="10" min="5" max="300">
+        </div>
+
+        <div class="btn-group">
+          <button id="bench-start-btn" class="btn-start" type="button">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Start Load
+          </button>
+          <button id="bench-stop-btn" class="btn-stop" type="button">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12"></rect>
+            </svg>
+            Halt
+          </button>
+        </div>
+      </div>
+
+      <div class="bench-status-row">
+        <div id="bench-status" class="bench-status">
+          <span class="pulse-dot" style="background: var(--text-muted); box-shadow: none;"></span>
+          Status: Idle
+        </div>
+        <div style="color: var(--text-muted);">Self-regulating async tokio workers</div>
+      </div>
+    </div>
+
+    <!-- Live Diagnostics & API Center -->
+    <div class="diagnostics-panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--emerald);">
+            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+          </svg>
+          <div class="panel-title">API Operations & Diagnostics</div>
+        </div>
+      </div>
+
+      <!-- Quick Interactive Ping Box -->
+      <div class="ping-tester-box">
+        <div class="ping-info">
+          <div class="ping-title">
+            <span>Ping Latency Probe</span>
+            <span id="ping-latency-badge" class="stat-pill" style="color: var(--cyan); border-color: rgba(6, 182, 212, 0.3);">READY</span>
+          </div>
+          <div class="ping-desc">Test hot-path latency directly from browser to Rust runtime.</div>
+        </div>
+        <button id="quick-ping-btn" class="btn-test-ping" type="button" onclick="runLivePing()">
+          ⚡ Run Ping
+        </button>
+      </div>
+
+      <!-- API Quick Copy Reference -->
+      <div class="endpoints-list">
+        <div class="endpoint-item">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="endpoint-method method-get">GET</span>
+            <span class="endpoint-path">/api/v1/ping</span>
+          </div>
+          <button class="copy-btn" title="Copy endpoint path" onclick="copyEndpoint('/api/v1/ping', this)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="endpoint-item">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="endpoint-method method-get">GET</span>
+            <span class="endpoint-path">/health</span>
+          </div>
+          <button class="copy-btn" title="Copy endpoint path" onclick="copyEndpoint('/health', this)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="endpoint-item">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="endpoint-method method-get">GET</span>
+            <span class="endpoint-path">/api/v1/metrics</span>
+          </div>
+          <button class="copy-btn" title="Copy endpoint path" onclick="copyEndpoint('/api/v1/metrics', this)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="endpoint-item">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="endpoint-method method-get">GET</span>
+            <span class="endpoint-path">/api/v1/users</span>
+          </div>
+          <button class="copy-btn" title="Copy endpoint path" onclick="copyEndpoint('/api/v1/users', this)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div>Project Ouroboros • Ultra-Low Latency Rust Microservice Engine</div>
+    <div class="footer-links">
+      <a class="footer-link" href="/health" target="_blank">Health Check</a>
+      <a class="footer-link" href="/api/v1/metrics" target="_blank">Raw Metrics JSON</a>
+      <a class="footer-link" href="/api/v1/users" target="_blank">Users API</a>
+    </div>
+  </footer>
+
+  <script src="/dashboard/assets/chart.min.js"></script>
+  <script src="/dashboard/assets/dashboard.js"></script>
+</body>
+</html>

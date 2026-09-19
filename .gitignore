@@ -1,0 +1,44 @@
+# Build artifacts & binaries
+/target
+debug/
+release/
+*.pdb
+*.exe
+*.dll
+*.so
+*.dylib
+*.rlib
+
+# Environment & Secrets (NEVER commit secrets to GitHub)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.cursor/
+.windsurf/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temporary files
+*.log
+*.tmp
+*.bak
+*.pid
+
+# Internal Documentation & Process Files
+# (Ignore all markdown files except README.md per user requirement)
+*.md
+!README.md
+!readme.md
+Docs/

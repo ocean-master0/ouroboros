@@ -42,3 +42,9 @@ desktop.ini
 !README.md
 !readme.md
 Docs/
+
+# Local-only benchmarks & scripts (DO NOT PUSH TO GITHUB)
+examples/local_user_bench.rs
+test_cloud_api.ps1
+search_user.py
+

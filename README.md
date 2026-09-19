@@ -322,11 +322,18 @@ Retrieves sliding 60-second in-memory metric snapshots.
 ---
 
 #### `GET /dashboard`
-Serves the self-contained HTML5/CSS observatory dashboard.
-- **Browser URL:** `http://localhost:8080/dashboard`
-- **Assets Bundled:**
+Serves the self-contained Executive Observatory HTML5/CSS telemetry dashboard.
+- **Browser URL (Local):** `http://localhost:8080/dashboard`
+- **Browser URL (Render Cloud):** `https://<your-app>.onrender.com/dashboard`
+- **Executive UI/UX Features:**
+  - **Obsidian Glassmorphic Aesthetic:** Dark obsidian space theme (`#07090e`) with multi-layer backdrop-filter blur, subtle neon glows (Cyan, Violet, Emerald), and smooth 3D elevation hover cards.
+  - **Custom Handcrafted SVG Icons:** Self-contained vector icons with glowing badges for Hot-Path Ping, Total System RPS, Error Rate %, Active TCP Sockets, and Target Status.
+  - **Live Latency Probe Tool:** Real-time client-to-cloud round-trip latency probe (`⚡ Run Ping`) displaying measured ping latency in milliseconds.
+  - **1-Click Load Presets:** Instant configuration chips (`⚡ Quick Direct (100)`, `🔥 Extreme Direct (1k)`, `🌐 HTTP Loopback (50)`).
+  - **Quick-Copy API Operations Hub:** Interactive endpoints reference with 1-click clipboard copy feedback.
+- **Assets Bundled (Compile-Time Embedded):**
   - `/dashboard/assets/chart.min.js` (Vendored Chart.js library)
-  - `/dashboard/assets/dashboard.js` (WebSocket listener & UI manager)
+  - `/dashboard/assets/dashboard.js` (WebSocket listener, telemetry charts & benchmark manager)
 
 ---
 
@@ -451,22 +458,39 @@ All user management endpoints interface directly with PostgreSQL via SQLx connec
   }
   ```
 
-#### 2. List Users (`GET /api/v1/users`)
-- **Query Parameters:** `page` *(optional, default: 1)*, `page_size` *(optional, default: 20)*.
-- **Sample Request:**
+#### 2. List & Search Users (`GET /api/v1/users`)
+- **Query Parameters:**
+  - `page` *(optional, integer, default: 1)*: Page number for pagination.
+  - `page_size` *(optional, integer, default: 20, max: 100)*: Items per page.
+  - `email` *(optional, string)*: Filter users matching specific email (case-insensitive substring or exact match).
+  - `name` *(optional, string)*: Filter users matching specific name (case-insensitive substring match).
+  - `search` *(optional, string)*: Universal search query matching across both `name` AND `email`.
+- **Sample Request (Pagination):**
   ```powershell
-  Invoke-RestMethod -Uri "http://localhost:8080/api/v1/users?page=1&page_size=10"
+  Invoke-RestMethod -Uri "https://<your-app>.onrender.com/api/v1/users?page=1&page_size=10"
+  ```
+- **Sample Request (Find by Email):**
+  ```powershell
+  Invoke-RestMethod -Uri "https://<your-app>.onrender.com/api/v1/users?email=abhishek@example.com"
+  ```
+- **Sample Request (Find by Name):**
+  ```powershell
+  Invoke-RestMethod -Uri "https://<your-app>.onrender.com/api/v1/users?name=Abhishek"
+  ```
+- **Sample Request (Universal Search across Name & Email):**
+  ```powershell
+  Invoke-RestMethod -Uri "https://<your-app>.onrender.com/api/v1/users?search=Abhi"
   ```
 - **Sample Response (HTTP 200 OK):**
   ```json
   {
     "users": [
       {
-        "id": "541d7165-c4dd-4b7f-b88f-7e3895c97b0e",
-        "name": "Aman Verma",
-        "email": "aman@example.com",
-        "created_at": "2026-09-19T11:02:26.260465Z",
-        "updated_at": "2026-09-19T11:02:26.260465Z"
+        "id": "30fc4bfe-cea1-48d3-9050-87192eca6441",
+        "name": "Abhishek",
+        "email": "abhishek@example.com",
+        "created_at": "2026-09-19T12:51:18.360292Z",
+        "updated_at": "2026-09-19T12:51:18.360292Z"
       }
     ],
     "page": 1,
